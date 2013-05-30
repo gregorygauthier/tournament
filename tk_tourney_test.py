@@ -27,10 +27,10 @@ class TourneySimApplication(ttk.Frame):
         self._ent_num_rounds.grid(row=1, column=1)
         self._run_button = ttk.Button(self, text='Run tournament',
             command=self.run_tournament)
-        self._run_button.grid(columnspan=2)
+        self._run_button.grid(columnspan=2, sticky=tk.W + tk.E)
         self._quit_button = ttk.Button(self,
             text='Quit this application', command=self.quit)
-        self._quit_button.grid(columnspan=2)
+        self._quit_button.grid(columnspan=2, sticky=tk.W + tk.E)
     
     @property
     def num_players(self):
