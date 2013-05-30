@@ -113,7 +113,7 @@ len(players)))
     def winner(self):
         raise NotImplementedError
     
-    """Computes the modified Bradley-Terry ratings with a fiction 0.5 win
+    """Computes the modified Bradley-Terry ratings with a fictional 0.5 win
     and 0.5 loss against a team of fixed 1.0 rating.
     
     This method computes the modified Bradley-Terry ratings of the players
@@ -121,7 +121,8 @@ len(players)))
     a team with a fixed 1.0 rating.  This modification ensures that the
     rating is well-defined even when the adjacency digraph is not strongly
     connected.  For the general Bradley-Terry recursion formula, see
-    
+    R. A. Bradley and M. E. Terry, "Rank Analysis of Incomplete Block Designs:
+    I. The Method of Paired Comparisons", Biometrika 39:324-345 (1952).
     """
     def modified_bradley_terry_ratings(self):
         pass #I'll find the algorithm tomorrow to put in the citation
