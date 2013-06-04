@@ -139,8 +139,26 @@ len(players)))
     """
     @property
     def modified_bradley_terry_ratings(self):
-        # THIS IS BUGGY AND THEREFORE IT STAYS OUT OF MAINLINE
-        pass
+        old_ratings = self._modified_bradley_terry_ratings.copy()
+        done = False
+        while not done:
+            # Recompute the ratings
+            # THIS IS BUGGY AND NEEDS TO BE FIXED
+            new_ratings = {x:(self.score_table[x] + 0.5)/
+                (sum([0 if y == x else
+                (self.win_matrix[(x, y)] + self.win_matrix[(y, x)]) /
+                (old_ratings[x] + old_ratings[y])
+                for y in self.players]) + (1 / (1 + old_ratings[x])))
+                for x in self.players}
+            s = sum(new_ratings.values())
+            done = True
+            for x in self.players:
+                if abs(new_ratings[x] - old_ratings[x]) > (
+                    self.MODIFIED_BRADLEY_TERRY_EPSILON):
+                    done = False
+                    break
+        self._modified_bradley_terry_ratings = new_ratings
+        return new_ratings.copy()
 
 class RoundRobinPairedTournament(PairedTournament):
     def do_tournament_initialization(self, *args, **kwargs):
