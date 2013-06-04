@@ -18,16 +18,16 @@ class PlayerWithAbility(object):
     def ability(self):
         return self._ability
 
-def print_pairing(pairing, score_table=None):
+def print_pairing(pairing, t=None):
     print("Pairing")
     print("=======")
     for pair in pairing:
-        if score_table == None:
+        if not t:
             print("{0:10} v. {1:10}".format(*[p.name for p in pair]))
         else:
             args = []
             for p in pair:
-                args.extend([p.name, score_table[p]])
+                args.extend([p.name, t.score_table[p]])
             print("{0:10} [{1:2d}] v. {2:10} [{3:2d}]".format(*args))
 
 def print_results(results):
@@ -36,23 +36,24 @@ def print_results(results):
     for match in results:
         print("{0:10} beat {1:10}".format(*[p.name for p in match]))
 
-def print_score_table(score_table, scoreboard=None):
+def print_score_table(t, print_scoreboard=False):
     print("Score table")
     print("===========")
-    if scoreboard == None:
+    if not print_scoreboard:
         print("   Name    Ability Score")
         print("---------- ------- -----")
     else:
         print("   Name    Ability Score Results")
         print("---------- ------- ----- -------")
-    for v, k in sorted(zip(score_table.values(), score_table.keys()),
+    rkg = t.ranking()
+    for v, k in sorted(zip(rkg.values(), rkg.keys()),
         key=lambda x:(-x[0], x[1])):
-        if scoreboard == None:
+        if not print_scoreboard:
             print("{0:10} {1:7.4f} {2:^5d}".format(
                 k.name, k.ability, v))
         else:
             result_string = ""
-            for r in scoreboard:
+            for r in t.scoreboard:
                 m = filter(lambda x:k in x, r)[0]
                 if m[0] == k:
                     result_string += m[1].name[0].upper()
@@ -72,14 +73,15 @@ def rank_list(original_list):
         seen_elements += sorted_list.count(e)
     return map(lambda x:ranks[x], original_list)
 
-def compute_spearman_rank_coefficient(score_table):
-    st = score_table.items()
-    abilities = [x[0].ability for x in st]
-    scores = [x[1] for x in st]
+def compute_spearman_rank_coefficient(t):
+    rkg = t.ranking()
+    pairs = sorted([(x, rkg[x]) for x in t.players], key=lambda x:-x[1])
+    abilities = [x[0].ability for x in pairs]
+    rank_keys = [x[1] for x in pairs]
     ability_ranks = rank_list(abilities)
-    score_ranks = rank_list(scores)
+    ranks = rank_list(rank_keys)
     # compute the spearman (defeats tank) coefficient
-    return spearman(ability_ranks, score_ranks)
+    return spearman(ability_ranks, ranks)
 
 def spearman(first_rank_list, second_rank_list):
     assert(len(first_rank_list) == len(second_rank_list))
@@ -120,19 +122,17 @@ def test_harness(t, rounds, verbose=True, print_scoreboard=True):
             print("Starting round {0}".format(r))
         pairs = t.next_pairing()
         if verbose:
-            if r > 1:
-                print_pairing(pairs, t.score_table)
-            else:
-                print_pairing(pairs)
+            print_pairing(pairs, t)
         results = simulate_round(pairs)
         if verbose:
             print_results(results)
         t.push_results(results)
-        # print the final table anyways
-        if verbose or r == rounds:
-            if print_scoreboard:
-                print_score_table(t.score_table, t.scoreboard)
-            else:
-                print_score_table(t.score_table)
-    print("Rank coefficient (raw scores): {0:7.4f}".format(
-        compute_spearman_rank_coefficient(t.score_table)))
+        if verbose:
+            print_score_table(t, print_scoreboard)
+    return_dict = {}
+    rank_coeff = compute_spearman_rank_coefficient(t)
+    return_dict['rank_coefficient'] = rank_coeff
+    if verbose:
+        print("Rank coefficient (raw scores): {0:7.4f}".format(
+            rank_coeff))
+    return return_dict

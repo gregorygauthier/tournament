@@ -45,13 +45,13 @@ class TourneySimApplication(ttk.Frame):
         t = tourney.MatchingPairedTournament(players, weight_function2)
         print("Starting a tournament with {0} players and {1} rounds".format(
             self.num_players, self.num_rounds))
-        tourney_sim.test_harness(t, self.num_rounds)
-    
-def weight_function2(x, y, win_matrix, scores):
-    num_previous_matches = win_matrix[(x, y)] + win_matrix[(y, x)]
+        tourney_sim.test_harness(t, self.num_rounds, verbose=True)
+
+def weight_function2(t, x, y):
+    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
     repeat_penalty = 0 if num_previous_matches == 0 else (
         2 * num_previous_matches + 1)
-    score_penalty = 2 * abs(scores[x] - scores[y])
+    score_penalty = 2 * abs(t.score_table[x] - t.score_table[y])
     return -(repeat_penalty + score_penalty)
 
 def main():

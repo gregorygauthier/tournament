@@ -109,8 +109,18 @@ len(players)))
     
     def next_pairing(self):
         raise NotImplementedError
-
-    def winner(self):
+    
+    """Generates a ranking of the players in the tournament.
+    
+    The ranking takes the form of a dict mapping each player to a value
+    that serves as a sort key.  The sort keys
+    are arranged such that (a) players with higher-valued keys are ranked above
+    players with lower-valued keys and (b) players with equal keys are ranked
+    as tied.  The keys may have additional meaning depending on the tournament
+    (for example, it may be the number of wins or the estimated ability of
+    the player based on the games played), or the keys may be arbitrary.
+    """
+    def ranking(self):
         raise NotImplementedError
     
     """Computes the modified Bradley-Terry ratings with a fictional 0.5 win
@@ -122,10 +132,33 @@ len(players)))
     rating is well-defined even when the adjacency digraph is not strongly
     connected.  For the general Bradley-Terry recursion formula, see
     R. A. Bradley and M. E. Terry, "Rank Analysis of Incomplete Block Designs:
-    I. The Method of Paired Comparisons", Biometrika 39:324-345 (1952).
+    I. The Method of Paired Comparisons", Biometrika 39:324-345 (1952)
+    and R. A. Bradley, "Science, Statistics, and Paired Comparisons" (1975)
+    available at
+    http://stat.fsu.edu/techreports/scanned%20in%20reports/M337.pdf
     """
+    @property
     def modified_bradley_terry_ratings(self):
-        pass #I'll find the algorithm tomorrow to put in the citation
+        old_ratings = self._modified_bradley_terry_ratings.copy()
+        done = False
+        while not done:
+            # Recompute the ratings
+            # THIS IS BUGGY AND NEEDS TO BE FIXED
+            new_ratings = {x:(self.score_table[x] + 0.5)/
+                (sum([0 if y == x else
+                (self.win_matrix[(x, y)] + self.win_matrix[(y, x)]) /
+                (old_ratings[x] + old_ratings[y])
+                for y in self.players]) + (1 / (1 + old_ratings[x])))
+                for x in self.players}
+            s = sum(new_ratings.values())
+            done = True
+            for x in self.players:
+                if abs(new_ratings[x] - old_ratings[x]) > (
+                    self.MODIFIED_BRADLEY_TERRY_EPSILON):
+                    done = False
+                    break
+        self._modified_bradley_terry_ratings = new_ratings
+        return new_ratings.copy()
 
 class RoundRobinPairedTournament(PairedTournament):
     def do_tournament_initialization(self, *args, **kwargs):
@@ -148,14 +181,8 @@ class RoundRobinPairedTournament(PairedTournament):
             pairings.add(frozenset([self.players[x], self.players[y]]))
         return frozenset(pairings)
     
-    def winner(self):
-        table = self.score_table()
-        most_wins = max(table.values())
-        winners = set()
-        for p in players:
-            if win_count[p] == most_wins:
-                winners.add(p)
-        return frozenset(winners)
+    def ranking(self):
+        return {x: self.score_table[x] for x in self.players}
 
 class SwissPairedTournament(PairedTournament):
     def do_tournament_initialization(self, *args, **kwargs):
@@ -184,14 +211,8 @@ class SwissPairedTournament(PairedTournament):
     def next_pairing(self):
         raise NotImplementedError
     
-    def winner(self):
-        table = self.score_table()
-        most_wins = max(table.values())
-        winners = set()
-        for p in players:
-            if win_count[p] == most_wins:
-                winners.add(p)
-        return frozenset(winners)
+    def ranking(self):
+        return {x: self.score_table[x] for x in self.players}
 
 """
 Implementation of Swiss pairs.
@@ -244,8 +265,7 @@ class MatchingPairedTournament(PairedTournament):
         self._wf = weight_function
     
     def weight(self, first_player, second_player):
-        return self._wf(first_player, second_player, self.win_matrix,
-            self.score_table)
+        return self._wf(self, first_player, second_player)
     
     def next_pairing(self):
         graph = nx.Graph()
@@ -269,6 +289,9 @@ class MatchingPairedTournament(PairedTournament):
                 pairing.add(frozenset([p, matching_dict[p]]))
                 pl.remove(matching_dict[p])
         return frozenset(pairing)
+    
+    def ranking(self):
+        return {x: self.score_table[x] for x in self.players}
 
 class SwissPairsMatchingTournament(MatchingPairedTournament):
     def weight(self, first_player, second_player):
