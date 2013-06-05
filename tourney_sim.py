@@ -40,16 +40,16 @@ def print_score_table(t, print_scoreboard=False):
     print("Score table")
     print("===========")
     if not print_scoreboard:
-        print("   Name    Ability Score")
-        print("---------- ------- -----")
+        print("   Name    Ability   Score  ")
+        print("---------- ------- ---------")
     else:
-        print("   Name    Ability Score Results")
-        print("---------- ------- ----- -------")
+        print("   Name    Ability   Score   Results")
+        print("---------- ------- --------- -------")
     rkg = t.ranking()
     for v, k in sorted(zip(rkg.values(), rkg.keys()),
         key=lambda x:(-x[0], x[1])):
         if not print_scoreboard:
-            print("{0:10} {1:7.4f} {2:^5d}".format(
+            print("{0:10} {1:7.4f} {2:9.5f}".format(
                 k.name, k.ability, v))
         else:
             result_string = ""
@@ -59,7 +59,7 @@ def print_score_table(t, print_scoreboard=False):
                     result_string += m[1].name[0].upper()
                 else:
                     result_string += m[0].name[0].lower()
-            print("{0:10} {1:7.4f} {2:^5d} {3}".format(
+            print("{0:10} {1:7.4f} {2:9.5f} {3}".format(
                 k.name, k.ability, v, result_string))
 
 def rank_list(original_list):

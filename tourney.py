@@ -64,6 +64,7 @@ len(players)))
             {(x, y):0 for x in self._players for y in self._players})
         self._score_table = {x:0 for x in self._players}
         self._modified_bradley_terry_ratings = {x:1.0 for x in self._players}
+        self._is_modified_bradley_terry_dirty = False
         self.do_tournament_initialization(*args, **kwargs)
     
     @property
@@ -103,6 +104,7 @@ len(players)))
             self._win_matrix[tuple(game)] += 1
             self._score_table[game[0]] += 1
         self._rounds_complete += 1
+        self._is_modified_bradley_terry_dirty = True
     
     def do_tournament_initialization(self, *args, **kwargs):
         raise NotImplementedError
@@ -139,6 +141,8 @@ len(players)))
     """
     @property
     def modified_bradley_terry_ratings(self):
+        if not self._is_modified_bradley_terry_dirty:
+            return self._modified_bradley_terry_ratings.copy()
         old_ratings = self._modified_bradley_terry_ratings.copy()
         done = False
         while not done:
@@ -157,7 +161,9 @@ len(players)))
                     self.MODIFIED_BRADLEY_TERRY_EPSILON):
                     done = False
                     break
+            old_ratings = new_ratings.copy()
         self._modified_bradley_terry_ratings = new_ratings
+        self._is_modified_bradley_terry_dirty = False
         return new_ratings.copy()
 
 class RoundRobinPairedTournament(PairedTournament):
@@ -291,7 +297,7 @@ class MatchingPairedTournament(PairedTournament):
         return frozenset(pairing)
     
     def ranking(self):
-        return {x: self.score_table[x] for x in self.players}
+        return self.modified_bradley_terry_ratings
 
 class SwissPairsMatchingTournament(MatchingPairedTournament):
     def weight(self, first_player, second_player):

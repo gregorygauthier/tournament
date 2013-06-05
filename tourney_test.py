@@ -1,6 +1,7 @@
 from __future__ import division
 import tourney
 import tourney_sim
+import math
 
 def test1():
     players = tourney_sim.get_players()
@@ -21,59 +22,97 @@ def weight_function2(t, x, y):
     score_penalty = 2 * abs(t.score_table[x] - t.score_table[y])
     return -(repeat_penalty + score_penalty)
 
+def weight_function3(t, x, y):
+    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
+    repeat_divisor = 1 << num_previous_matches
+    rx = t.modified_bradley_terry_ratings[x]
+    ry = t.modified_bradley_terry_ratings[y]
+    score = (rx * ry) / ((rx + ry)**2)
+    return score/repeat_divisor
+
+def weight_function4(t, x, y):
+    alpha = 1
+    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
+    rx = t.modified_bradley_terry_ratings[x]
+    ry = t.modified_bradley_terry_ratings[y]
+    return (math.log(rx) + math.log(ry) - 2 * math.log(rx + ry) -
+        alpha * num_previous_matches)
+
+def weight_function5(t, x, y):
+    alpha = 0.5
+    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
+    rx = t.modified_bradley_terry_ratings[x]
+    ry = t.modified_bradley_terry_ratings[y]
+    return (1 + alpha * num_previous_matches) * (math.log(rx) + math.log(ry) -
+        2 * math.log(rx + ry))
+
 def test2():
     
     players = tourney_sim.get_players(20)
-    t = tourney.MatchingPairedTournament(players, weight_function2)
+    t = tourney.MatchingPairedTournament(players, weight_function5)
     rounds = 19
     
     tourney_sim.test_harness(t, rounds, True, True)
 
 def test3():
-    NUM_TRIALS = 1000
+    NUM_TRIALS = 500
     PLAYERS = 20
     ROUNDS = 19
-    ranks = {x : [] for x in ('round_robin', 'random_swiss', 'matching')}
+    ranks = {x : [] for x in ('round_robin', 'matching1', 'matching2')}
+    print("Round robin data")
+    print("----------------")
     for trial in range(NUM_TRIALS):
         players = tourney_sim.get_players(PLAYERS)
         t = tourney.RoundRobinPairedTournament(players)
-        ranks['round_robin'].append(
-            tourney_sim.test_harness(t, ROUNDS, verbose=False)[
-            'rank_coefficient'])
+        rc = tourney_sim.test_harness(t, ROUNDS, verbose=False)[
+            'rank_coefficient']
+        print("{0:8.6f}".format(rc))
+        ranks['round_robin'].append(rc)
     
+    print("")
+    print("Matching 1 data ")
+    print("----------------")
     for trial in range(NUM_TRIALS):
         players = tourney_sim.get_players(PLAYERS)
-        t = tourney.RandomSwissPairedTournamentWithRepeats(players)
-        ranks['random_swiss'].append(
-            tourney_sim.test_harness(t, ROUNDS, verbose=False)[
-            'rank_coefficient'])
+        t = tourney.MatchingPairedTournament(players, weight_function4)
+        rc = tourney_sim.test_harness(t, ROUNDS, verbose=False)[
+            'rank_coefficient']
+        print("{0:8.6f}".format(rc))
+        ranks['matching1'].append(rc)
     
+    print("")
+    print("Matching 2 data ")
+    print("----------------")
     for trial in range(NUM_TRIALS):
         players = tourney_sim.get_players(PLAYERS)
-        t = tourney.MatchingPairedTournament(players, weight_function2)
-        ranks['matching'].append(
-            tourney_sim.test_harness(t, ROUNDS, verbose=False)[
-            'rank_coefficient'])
+        t = tourney.MatchingPairedTournament(players, weight_function5)
+        rc = tourney_sim.test_harness(t, ROUNDS, verbose=False)[
+            'rank_coefficient']
+        print("{0:8.6f}".format(rc))
+        ranks['matching2'].append(rc)
+    print("")
+    print("Summary stats   ")
+    print("----------------")
     
     #print(ranks['round_robin'])
     #print(ranks['random_swiss'])
     #print(ranks['matching'])
     
     means = {x : sum(ranks[x])/len(ranks[x]) for x in
-        ('round_robin', 'random_swiss', 'matching')}
+        ('round_robin', 'matching1', 'matching2')}
     
-    sample_stds = {x : sum([(y - means[x])**2 for y in ranks[x]])/
-        (len(ranks[x]) - 1)
-        for x in ('round_robin', 'random_swiss', 'matching')}
+    sample_stds = {x : (sum([(y - means[x])**2 for y in ranks[x]])/
+        (len(ranks[x]) - 1)) ** 0.5
+        for x in ('round_robin', 'matching1', 'matching2')}
     
     print('   Method      Mean   Std.Dev.')
     print('------------ -------- --------')
     print('Round robin  {0:0.6f} {1:0.6f}'.format(means['round_robin'],
         sample_stds['round_robin']))
-    print('Random Swiss {0:0.6f} {1:0.6f}'.format(means['random_swiss'],
-        sample_stds['random_swiss']))
-    print('Matching     {0:0.6f} {1:0.6f}'.format(means['matching'],
-        sample_stds['matching']))
+    print('Matching 1   {0:0.6f} {1:0.6f}'.format(means['matching1'],
+        sample_stds['matching1']))
+    print('Matching 2   {0:0.6f} {1:0.6f}'.format(means['matching2'],
+        sample_stds['matching2']))
 
 if __name__ == "__main__":
-    test2()
+    test3()
