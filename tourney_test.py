@@ -2,6 +2,7 @@ from __future__ import division
 import tourney
 import tourney_sim
 import math
+import multiprocessing
 
 def test1():
     players = tourney_sim.get_players()
@@ -114,5 +115,30 @@ def test3():
     print('Matching 2   {0:0.6f} {1:0.6f}'.format(means['matching2'],
         sample_stds['matching2']))
 
+#to make this pickleable
+def run_test(tup):
+    #tup[0] is a tournament, tup[1] is the number of rounds
+    return tourney_sim.test_harness(tup[0], tup[1], verbose=False)[
+        'rank_coefficient']
+
+def test4(num_trials=10, num_players=20, num_rounds=19):
+    # A multithreaded test
+    player_sets = [tourney_sim.get_players(num_players)
+        for x in range(3 * num_trials)]
+    tourneys = []
+    for i in range(num_trials):
+        tourneys.append((tourney.RoundRobinPairedTournament(player_sets[i]),
+            num_rounds))
+    for i in range(num_trials, 2 * num_trials):
+        tourneys.append((tourney.MatchingPairedTournament(player_sets[i],
+            weight_function4), num_rounds))
+    for i in range(2 * num_trials, 3 * num_trials):
+        tourneys.append((tourney.MatchingPairedTournament(player_sets[i],
+            weight_function5), num_rounds))
+    pool = multiprocessing.Pool(None)
+    results = pool.map(run_test, tourneys)
+    for r in results:
+        print('{0:0.6f}'.format(r))
+
 if __name__ == "__main__":
-    test3()
+    test4()
