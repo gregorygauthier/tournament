@@ -27,7 +27,7 @@ def print_pairing(pairing, t=None):
         else:
             args = []
             for p in pair:
-                args.extend([p.name, t.score_table[p]])
+                args.extend([p.name, t.score_table_entry(p)])
             print("{0:10} [{1:2d}] v. {2:10} [{3:2d}]".format(*args))
 
 def print_results(results):

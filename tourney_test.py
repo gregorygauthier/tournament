@@ -11,7 +11,7 @@ def test1():
     tourney_sim.test_harness(t, rounds)
 
 def weight_function(t, x, y):
-    if t.win_matrix[(x, y)] > 0 or t.win_matrix[(y, x)] > 0:
+    if t.win_matrix_entry(x, y) > 0 or t.win_matrix_entry(y, x) > 0:
         raise tourney.ImpossibleMatch
     else:
         return -abs(t.score_table[x] - t.score_table[y])
@@ -24,26 +24,26 @@ def weight_function2(t, x, y):
     return -(repeat_penalty + score_penalty)
 
 def weight_function3(t, x, y):
-    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
+    num_previous_matches = t.win_matrix_entry(x, y) + t.win_matrix_entry(y, x)
     repeat_divisor = 1 << num_previous_matches
-    rx = t.modified_bradley_terry_ratings[x]
-    ry = t.modified_bradley_terry_ratings[y]
+    rx = t.modified_bradley_terry_ratings(x)
+    ry = t.modified_bradley_terry_ratings(y)
     score = (rx * ry) / ((rx + ry)**2)
     return score/repeat_divisor
 
 def weight_function4(t, x, y):
     alpha = 1
-    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
-    rx = t.modified_bradley_terry_ratings[x]
-    ry = t.modified_bradley_terry_ratings[y]
+    num_previous_matches = t.win_matrix_entry(x, y) + t.win_matrix_entry(y, x)
+    rx = t.modified_bradley_terry_ratings(x)
+    ry = t.modified_bradley_terry_ratings(y)
     return (math.log(rx) + math.log(ry) - 2 * math.log(rx + ry) -
         alpha * num_previous_matches)
 
 def weight_function5(t, x, y):
     alpha = 0.5
-    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
-    rx = t.modified_bradley_terry_ratings[x]
-    ry = t.modified_bradley_terry_ratings[y]
+    num_previous_matches = t.win_matrix_entry(x, y) + t.win_matrix_entry(y, x)
+    rx = t.modified_bradley_terry_ratings(x)
+    ry = t.modified_bradley_terry_ratings(y)
     return (1 + alpha * num_previous_matches) * (math.log(rx) + math.log(ry) -
         2 * math.log(rx + ry))
 
@@ -137,8 +137,10 @@ def test4(num_trials=10, num_players=20, num_rounds=19):
             weight_function5), num_rounds))
     pool = multiprocessing.Pool(None)
     results = pool.map(run_test, tourneys)
-    for r in results:
-        print('{0:0.6f}'.format(r))
+    print('Round Robin,wf4,wf5')
+    for i in range(num_trials):
+        print(','.join(['{0:0.6f}'.format(results[i + num_trials * x]) for
+            x in range(3)]))
 
 if __name__ == "__main__":
-    test4()
+    test4(num_trials=1000)

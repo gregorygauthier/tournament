@@ -50,7 +50,7 @@ The algorithm also contains a winner function that returns a frozenset
 of one or more players who are declared winners based upon the scoreboard
 """
 class PairedTournament(object):
-    MODIFIED_BRADLEY_TERRY_EPSILON = 1e-6
+    MODIFIED_BRADLEY_TERRY_EPSILON = 1e-5
     
     def __init__(self, players, *args, **kwargs):
         if len(players) % 2 != 0:
@@ -90,6 +90,9 @@ len(players)))
                 table[match[0]] += 1
         return table"""
         return self._score_table.copy()
+    
+    def score_table_entry(self, player):
+        return self._score_table[player]
     
     @property
     def win_matrix(self):
@@ -139,18 +142,18 @@ len(players)))
     available at
     http://stat.fsu.edu/techreports/scanned%20in%20reports/M337.pdf
     """
-    @property
-    def modified_bradley_terry_ratings(self):
+    def modified_bradley_terry_ratings(self, player=None):
         if not self._is_modified_bradley_terry_dirty:
-            return self._modified_bradley_terry_ratings.copy()
-        old_ratings = self._modified_bradley_terry_ratings.copy()
+		    if player is None:
+		        return self._modified_bradley_terry_ratings.copy()
+		    else:
+		        return self._modified_bradley_terry_ratings[player]
+        old_ratings = self._modified_bradley_terry_ratings
         done = False
         while not done:
-            # Recompute the ratings
-            # THIS IS BUGGY AND NEEDS TO BE FIXED
-            new_ratings = {x:(self.score_table[x] + 0.5)/
+            new_ratings = {x:(self.score_table_entry(x) + 0.5)/
                 (sum([0 if y == x else
-                (self.win_matrix[(x, y)] + self.win_matrix[(y, x)]) /
+                (self.win_matrix_entry(x, y) + self.win_matrix_entry(y, x)) /
                 (old_ratings[x] + old_ratings[y])
                 for y in self.players]) + (1 / (1 + old_ratings[x])))
                 for x in self.players}
@@ -161,10 +164,13 @@ len(players)))
                     self.MODIFIED_BRADLEY_TERRY_EPSILON):
                     done = False
                     break
-            old_ratings = new_ratings.copy()
+            old_ratings = new_ratings
         self._modified_bradley_terry_ratings = new_ratings
         self._is_modified_bradley_terry_dirty = False
-        return new_ratings.copy()
+        if player is None:
+		    return new_ratings.copy()
+        else:
+            return new_ratings[player]
 
 class RoundRobinPairedTournament(PairedTournament):
     def do_tournament_initialization(self, *args, **kwargs):
@@ -188,7 +194,7 @@ class RoundRobinPairedTournament(PairedTournament):
         return frozenset(pairings)
     
     def ranking(self):
-        return {x: self.score_table[x] for x in self.players}
+        return {x: self.score_table_entry(x) for x in self.players}
 
 class SwissPairedTournament(PairedTournament):
     def do_tournament_initialization(self, *args, **kwargs):
@@ -218,7 +224,7 @@ class SwissPairedTournament(PairedTournament):
         raise NotImplementedError
     
     def ranking(self):
-        return {x: self.score_table[x] for x in self.players}
+        return {x: self.score_table_entry(x) for x in self.players}
 
 """
 Implementation of Swiss pairs.
@@ -297,7 +303,7 @@ class MatchingPairedTournament(PairedTournament):
         return frozenset(pairing)
     
     def ranking(self):
-        return self.modified_bradley_terry_ratings
+        return self.modified_bradley_terry_ratings()
 
 class SwissPairsMatchingTournament(MatchingPairedTournament):
     def weight(self, first_player, second_player):

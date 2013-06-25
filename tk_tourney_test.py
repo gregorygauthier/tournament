@@ -48,7 +48,7 @@ class TourneySimApplication(ttk.Frame):
         tourney_sim.test_harness(t, self.num_rounds, verbose=True)
 
 def weight_function2(t, x, y):
-    num_previous_matches = t.win_matrix[(x, y)] + t.win_matrix[(y, x)]
+    num_previous_matches = t.win_matrix_entry(x, y) + t.win_matrix_entry(y, x)
     repeat_penalty = 0 if num_previous_matches == 0 else (
         2 * num_previous_matches + 1)
     score_penalty = 2 * abs(t.score_table[x] - t.score_table[y])
