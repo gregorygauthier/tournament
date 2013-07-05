@@ -1,5 +1,8 @@
+from __future__ import division
 import random
 import tourney
+import itertools
+import scipy.stats
 
 class PlayerWithAbility(object):
     def __init__(self, name, ability):
@@ -108,6 +111,45 @@ def get_players(num_players=20):
         players.append(PlayerWithAbility(name))
     return players
 
+def compute_closeness_value(t):
+    total = 0.0
+    for pair in itertools.combinations(t.players, 2):
+        total += (t.win_matrix_entry(pair[0], pair[1]) +
+            t.win_matrix_entry(pair[1], pair[0])) * (
+            pair[0].ability - pair[1].ability)**2
+    return total
+
+def compute_match_information(t):
+    # See Glickman and Jensen 2005
+    total = 0.0
+    for pair in itertools.combinations(t.players, 2):
+        p = scipy.stats.norm.cdf(pair[0].ability - pair[1].ability)
+        total += (t.win_matrix_entry(pair[0], pair[1]) +
+            t.win_matrix_entry(pair[1], pair[0])) * (
+            p * (1-p))
+    return total
+
+def compute_win_share(t):
+    # 1/n if the top ability player finishes tied for 1st with n players
+    # 0 otherwise
+    #players = t.players
+    #best_player = players[0]
+    #for p in players[1:]:
+    #    if p.ability > best_player.ability:
+    #        best_player = p
+    players = t.players
+    best_player = [p for p in players if p.ability ==
+        max([q.ability for q in players])][0]
+    # this may not be well-defined if we have floating-point problems, but
+    # it will have to do for now
+    ranking = t.ranking()
+    highest_ranked_players = [p for p in players if ranking[p] ==
+        max([ranking[q] for q in players])]
+    if best_player in highest_ranked_players:
+        return 1.0/len(highest_ranked_players)
+    else:
+        return 0.0
+
 def simulate_round(pairs):
     results = [list(pair) for pair in pairs]
     for r in results:
@@ -135,4 +177,16 @@ def test_harness(t, rounds, verbose=True, print_scoreboard=True):
     if verbose:
         print("Rank coefficient (raw scores): {0:7.4f}".format(
             rank_coeff))
+    cv = compute_closeness_value(t)
+    return_dict['closeness_value'] = cv
+    if verbose:
+        print("Closeness value: {0:9.4f}".format(cv))
+    match_information = compute_match_information(t)
+    return_dict['match_information'] = match_information
+    if verbose:
+        print("Match information: {0:9.4f}".format(match_information))
+    win_share = compute_win_share(t)
+    return_dict['win_share'] = win_share
+    if verbose:
+        print("Win share: {0:7.4f}".format(win_share))
     return return_dict

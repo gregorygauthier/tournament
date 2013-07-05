@@ -20,7 +20,7 @@ made.
 """
 class NoValidPairingError(Exception):
     """Create the exception with the specified value text"""
-    def __init__(self, value):
+    def __init__(self, value=''):
         self.value = value
     
     """Returns a string representation of the value text"""
@@ -177,10 +177,9 @@ class RoundRobinPairedTournament(PairedTournament):
         pass
     
     def next_pairing(self):
-        if self.rounds_complete >= len(self.players) - 1:
-            raise NoValidPairingError
+        r = self.rounds_complete % (len(self.players) - 1)
         pairings = set()
-        k = len(self.players) - self.rounds_complete - 1
+        k = len(self.players) - r - 1
         pairings.add(frozenset([self.players[0],
             self._players[k]]))
         for i in range(1, len(self.players)/2):

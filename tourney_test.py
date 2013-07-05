@@ -7,7 +7,7 @@ import multiprocessing
 def test1():
     players = tourney_sim.get_players()
     t = tourney.RoundRobinPairedTournament(players)
-    rounds = len(players) - 1
+    rounds = (len(players) - 1)
     tourney_sim.test_harness(t, rounds)
 
 def weight_function(t, x, y):
@@ -51,7 +51,7 @@ def test2():
     
     players = tourney_sim.get_players(20)
     t = tourney.MatchingPairedTournament(players, weight_function5)
-    rounds = 19
+    rounds = 4 * (len(players) - 1)
     
     tourney_sim.test_harness(t, rounds, True, True)
 
@@ -119,7 +119,7 @@ def test3():
 def run_test(tup):
     #tup[0] is a tournament, tup[1] is the number of rounds
     return tourney_sim.test_harness(tup[0], tup[1], verbose=False)[
-        'rank_coefficient']
+        'win_share']
 
 def test4(num_trials=10, num_players=20, num_rounds=19):
     # A multithreaded test
@@ -143,4 +143,8 @@ def test4(num_trials=10, num_players=20, num_rounds=19):
             x in range(3)]))
 
 if __name__ == "__main__":
-    test4(num_trials=1000)
+    #test4(num_trials=1000)
+    #test4(num_trials=1000, num_players=40, num_rounds=39)
+    #test2()
+    #test4(num_trials=1000, num_players=40, num_rounds=39)
+    test2()
