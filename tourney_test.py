@@ -119,22 +119,23 @@ def test3():
 def run_test(tup):
     #tup[0] is a tournament, tup[1] is the number of rounds
     return tourney_sim.test_harness(tup[0], tup[1], verbose=False)[
-        'win_share']
+        tup[2]]
 
-def test4(num_trials=10, num_players=20, num_rounds=19):
+def test4(num_trials=10, num_players=20, num_rounds=19,
+    test_statistic='rank_coefficient'):
     # A multithreaded test
     player_sets = [tourney_sim.get_players(num_players)
         for x in range(3 * num_trials)]
     tourneys = []
     for i in range(num_trials):
         tourneys.append((tourney.RoundRobinPairedTournament(player_sets[i]),
-            num_rounds))
+            num_rounds, test_statistic))
     for i in range(num_trials, 2 * num_trials):
         tourneys.append((tourney.MatchingPairedTournament(player_sets[i],
-            weight_function4), num_rounds))
+            weight_function4), num_rounds, test_statistic))
     for i in range(2 * num_trials, 3 * num_trials):
         tourneys.append((tourney.MatchingPairedTournament(player_sets[i],
-            weight_function5), num_rounds))
+            weight_function5), num_rounds, test_statistic))
     pool = multiprocessing.Pool(None)
     results = pool.map(run_test, tourneys)
     print('Round Robin,wf4,wf5')
@@ -147,4 +148,5 @@ if __name__ == "__main__":
     #test4(num_trials=1000, num_players=40, num_rounds=39)
     #test2()
     #test4(num_trials=1000, num_players=40, num_rounds=39)
-    test2()
+    test4(num_trials=10, num_players=10, num_rounds=9, test_statistic=
+        'win_share')
