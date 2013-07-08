@@ -121,23 +121,28 @@ def run_test(tup):
     return tourney_sim.test_harness(tup[0], tup[1], verbose=False)[
         tup[2]]
 
+"""Generate an iterator for tournaments"""
+def tourney_generator(num_trials, num_players, num_rounds, test_statistic):
+    for i in range(num_trials):
+        yield (tourney.RoundRobinPairedTournament(
+            tourney_sim.get_players(num_players)), num_rounds,
+            test_statistic)
+    for i in range(num_trials):
+        yield (tourney.MatchingPairedTournament(
+            tourney_sim.get_players(num_players),
+            weight_function4), num_rounds, test_statistic)
+    for i in range(num_trials):
+        yield (tourney.MatchingPairedTournament(
+            tourney_sim.get_players(num_players),
+            weight_function5), num_rounds, test_statistic)
+    
+
 def test4(num_trials=10, num_players=20, num_rounds=19,
     test_statistic='rank_coefficient'):
     # A multithreaded test
-    player_sets = [tourney_sim.get_players(num_players)
-        for x in range(3 * num_trials)]
-    tourneys = []
-    for i in range(num_trials):
-        tourneys.append((tourney.RoundRobinPairedTournament(player_sets[i]),
-            num_rounds, test_statistic))
-    for i in range(num_trials, 2 * num_trials):
-        tourneys.append((tourney.MatchingPairedTournament(player_sets[i],
-            weight_function4), num_rounds, test_statistic))
-    for i in range(2 * num_trials, 3 * num_trials):
-        tourneys.append((tourney.MatchingPairedTournament(player_sets[i],
-            weight_function5), num_rounds, test_statistic))
     pool = multiprocessing.Pool(None)
-    results = pool.map(run_test, tourneys)
+    results = pool.map(run_test, tourney_generator(num_trials, num_players,
+        num_rounds, test_statistic))
     print('Round Robin,wf4,wf5')
     for i in range(num_trials):
         print(','.join(['{0:0.6f}'.format(results[i + num_trials * x]) for
