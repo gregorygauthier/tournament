@@ -153,5 +153,5 @@ if __name__ == "__main__":
     #test4(num_trials=1000, num_players=40, num_rounds=39)
     #test2()
     #test4(num_trials=1000, num_players=40, num_rounds=39)
-    test4(num_trials=10, num_players=10, num_rounds=9, test_statistic=
-        'win_share')
+    test4(num_trials=100000, num_players=10, num_rounds=9, test_statistic=
+        'rank_coefficient')
