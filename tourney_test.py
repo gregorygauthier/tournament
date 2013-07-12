@@ -148,10 +148,22 @@ def test4(num_trials=10, num_players=20, num_rounds=19,
         print(','.join(['{0:0.6f}'.format(results[i + num_trials * x]) for
             x in range(3)]))
 
+def test5():
+    players = tourney_sim.get_players(8)
+    card_system = (frozenset([(0, 4), (1, 5), (2, 6), (3, 7)]),
+        frozenset([(0, 2), (1, 3), (4, 6), (5, 7)]),
+        frozenset([(0, 1), (2, 3), (4, 5), (6, 7)]))
+    final_card_rankings = {x : 8 - x for x in range(8)}
+    t = tourney.PowerMatchedTournament(players, card_system=card_system,
+        final_card_rankings=final_card_rankings)
+    rounds = 3
+    tourney_sim.test_harness(t, rounds)
+
 if __name__ == "__main__":
     #test4(num_trials=1000)
     #test4(num_trials=1000, num_players=40, num_rounds=39)
     #test2()
     #test4(num_trials=1000, num_players=40, num_rounds=39)
-    test4(num_trials=100000, num_players=10, num_rounds=9, test_statistic=
-        'rank_coefficient')
+    #test4(num_trials=100000, num_players=10, num_rounds=9, test_statistic=
+    #    'rank_coefficient')
+    test5()

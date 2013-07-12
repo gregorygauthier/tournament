@@ -312,3 +312,54 @@ class SwissPairsMatchingTournament(MatchingPairedTournament):
         else:
             return -abs(self.score_table[first_player] -
                 self.score_table[second_player])
+
+class PowerMatchedTournament(PairedTournament):
+    """Initialize a power-matched tournament with the given card
+    system and final card rankings.
+    
+    card_system is a sequence of sets of tuples: each set of tuples is
+    a partition of {0, 1, ..., len(players)-1}.  After each match, the winner
+    gets the card closer to 0 and the loser gets the card closer to
+    len(players)-1.
+    
+    final_card_rankings is a tuple of length len(players) and
+    values real numbers.  At the end of the tournament, the ranking is
+    determined by mapping each player to the ranking corresponding to his
+    final card.
+    """
+    def do_tournament_initialization(self, card_system,
+        final_card_rankings, *args, **kwargs):
+        self._card_system = tuple(card_system)
+        self._final_card_rankings = dict(final_card_rankings)
+        self._total_rounds = len(self._card_system)
+        self._current_cards = {self.players[i] : i
+            for i in range(len(self.players))}
+    
+    @property
+    def current_cards(self):
+        return self._current_cards.copy()
+    
+    def current_card_entry(self, player):
+        return self._current_cards[player]
+    
+    def push_results(self, results):
+        super(PowerMatchedTournament, self).push_results(results)
+        # change the cards
+        for game in results:
+            if self._current_cards[game[0]] > self._current_cards[game[1]]:
+                tmp = self._current_cards[game[1]]
+                self._current_cards[game[1]] = self._current_cards[game[0]]
+                self._current_cards[game[0]] = tmp
+    
+    def next_pairing(self):
+        current_card_scheme = self._card_system[self.rounds_complete]
+        reverse_current_cards = {x[1] : x[0] for x in
+            self._current_cards.items()}
+        pairs = []
+        for match in current_card_scheme:
+            pairs.append(frozenset([reverse_current_cards[n] for n in match]))
+        return frozenset(pairs)
+    
+    def ranking(self):
+        return {x : self._final_card_rankings[self._current_cards[x]]
+            for x in self.players}
