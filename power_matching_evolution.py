@@ -8,6 +8,7 @@ NUM_ROUNDS = 4
 POPULATION_SIZE = 3000
 NUM_GENERATIONS = 100
 REDUCTION_FACTOR = 3
+FITNESS_SAMPLE_SIZE = 25
 
 def random_permutation(n):
     r = range(n)
@@ -35,7 +36,7 @@ def evaluation_function(x):
     card_system = tuple(card_system)
     final_card_rankings = {a: -i for (a, i) in enumerate(x[-1])}
     total_rank_coefficient = 0.0
-    for trial in range(5):
+    for trial in range(FITNESS_SAMPLE_SIZE):
         players = tourney_sim.get_players(NUM_PLAYERS)
         t = tourney.PowerMatchedTournament(players, card_system=card_system,
             final_card_rankings=final_card_rankings)
