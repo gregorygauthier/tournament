@@ -57,6 +57,10 @@ def print_score_table(t, print_scoreboard=False):
         else:
             result_string = ""
             for r in t.scoreboard:
+                matches = filter(lambda x:k in x, r)
+                if len(matches) == 0:
+                    result_string += "."
+                    continue
                 m = filter(lambda x:k in x, r)[0]
                 if m[0] == k:
                     result_string += m[1].name[0].upper()

@@ -150,10 +150,14 @@ def test4(num_trials=10, num_players=20, num_rounds=19,
 
 def test5():
     players = tourney_sim.get_players(8)
-    card_system = (frozenset([(0, 4), (1, 5), (2, 6), (3, 7)]),
+    """card_system = (frozenset([(0, 4), (1, 5), (2, 6), (3, 7)]),
         frozenset([(0, 2), (1, 3), (4, 6), (5, 7)]),
         frozenset([(0, 1), (2, 3), (4, 5), (6, 7)]))
     final_card_rankings = {x : 8 - x for x in range(8)}
+    """
+    card_system = (frozenset([(0, 7), (1, 6), (2, 5), (3, 4)]),
+        frozenset([(0, 3), (1, 2)]), frozenset([(0, 1)]))
+    final_card_rankings = {0:3, 1:2, 2:1, 3:1, 4:0, 5:0, 6:0, 7:0}
     t = tourney.PowerMatchedTournament(players, card_system=card_system,
         final_card_rankings=final_card_rankings)
     rounds = 3
