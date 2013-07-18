@@ -3,22 +3,34 @@ import itertools
 import tourney
 import tourney_sim
 from deap import base, creator, tools
-NUM_PLAYERS = 6
-NUM_ROUNDS = 4
+NUM_PLAYERS = 12
+NUM_ROUNDS = 6
 POPULATION_SIZE = 3000
-NUM_GENERATIONS = 100
+NUM_GENERATIONS = 250
 REDUCTION_FACTOR = 3
 FITNESS_SAMPLE_SIZE = 25
+NOISE_FACTOR = 1.0
+TEST_STATISTIC = 'win_share'
+SEEDED = False
+REPEAT_PENALTY_COEFFICIENT = 0.005
+MISMATCH_PENALTY_COEFFICIENT = 0.005
+
+def repeat_penalty(num_of_matches):
+    return num_of_matches**2 * REPEAT_PENALTY_COEFFICIENT
+
+def mismatch_penalty(win_differential):
+    return win_differential**2 * MISMATCH_PENALTY_COEFFICIENT
 
 def random_permutation(n):
     r = range(n)
     random.shuffle(r)
     return r
 
+# n is a sentinel value for a bye; everything afterwards gets a bye
 toolbox = base.Toolbox()
-toolbox.register("attribute", lambda: random_permutation(NUM_PLAYERS))
+toolbox.register("attribute", lambda: random_permutation(NUM_PLAYERS + 1))
 toolbox.register("individual", tools.initRepeat, list, toolbox.attribute,
-    n=NUM_ROUNDS + 1)
+    n=NUM_ROUNDS)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 def mate(x, y):
@@ -31,17 +43,28 @@ def mutate(x, indpb):
 
 def evaluation_function(x):
     card_system = []
-    for r in x[:-1]:
-        card_system.append(tuple(zip(r[::2], r[1::2])))
+    for r in x:
+        r_without_byes = r[:r.index(NUM_PLAYERS)]
+        if len(r_without_byes) % 2 == 1:
+            del r_without_byes[-1]
+        card_system.append(
+            tuple(zip(r_without_byes[::2], r_without_byes[1::2])))
     card_system = tuple(card_system)
-    final_card_rankings = {a: -i for (a, i) in enumerate(x[-1])}
+    final_card_rankings = {n : NUM_PLAYERS-n for n in range(NUM_PLAYERS)}
     total_rank_coefficient = 0.0
     for trial in range(FITNESS_SAMPLE_SIZE):
         players = tourney_sim.get_players(NUM_PLAYERS)
+        if SEEDED:
+            players = [y[0] for y in
+                sorted([(p, p.ability + random.gauss(0, NOISE_FACTOR))
+                for p in players], key=lambda x:-x[1])]
         t = tourney.PowerMatchedTournament(players, card_system=card_system,
             final_card_rankings=final_card_rankings)
         total_rank_coefficient += tourney_sim.test_harness(
-            t, NUM_ROUNDS, False)['rank_coefficient']
+            t, NUM_ROUNDS, False)[TEST_STATISTIC]
+        for x, y in itertools.combinations(players, 2):
+            total_rank_coefficient -= repeat_penalty(
+                t.win_matrix_entry(x, y) + t.win_matrix_entry(y, x))
     return total_rank_coefficient
 
 def selection_function(pop, k):
@@ -71,11 +94,13 @@ def print_generation(pop):
 
 def tupleize(p):
     result = []
-    for r in p[:-1]:
-        r_paired = zip(r[::2], r[1::2])
+    for r in p:
+        r_without_byes = r[:r.index(NUM_PLAYERS)]
+        if len(r_without_byes) % 2 == 1:
+            del r_without_byes[-1]
+        r_paired = zip(r_without_byes[::2], r_without_byes[1::2])
         r_paired = [tuple(sorted(x)) for x in r_paired]
         result.append(tuple(sorted(r_paired)))
-    result.append(tuple(p[-1]))
     return tuple(result)
 
 def main():
