@@ -363,3 +363,64 @@ class PowerMatchedTournament(PairedTournament):
     def ranking(self):
         return {x : self._final_card_rankings[self._current_cards[x]]
             for x in self.players}
+
+def reinstein_power_matching(num_players, num_rounds):
+    pairs = []
+    number_of_factors_of_two = 0
+    tmp = num_players
+    while tmp % 2 == 0:
+        number_of_factors_of_two += 1
+        tmp /= 2
+    odd_factor = tmp
+    if number_of_factors_of_two == 0:
+        raise PlayerParityError
+    if num_rounds > number_of_factors_of_two:
+        raise NotImpelementedError
+    groups_and_records = [{x: 0} for x in range(num_players)]
+    rounds_paired = 0
+    while rounds_paired < number_of_factors_of_two:
+        #print("Starting pairing for round {0}...".format(rounds_paired + 1))
+        #print(groups_and_records)
+        new_groups_and_records = []
+        current_pairing = []
+        while len(groups_and_records) > 0:
+            #print("TEST!")
+            first_group = groups_and_records.pop(0)
+            second_group = groups_and_records.pop()
+            #print(first_group)
+            #print(second_group)
+            first_group_by_record = dict()
+            for key, value in sorted(first_group.items()):
+                if value in first_group_by_record:
+                    first_group_by_record[value].append(key)
+                else:
+                    first_group_by_record[value] = [key]
+            second_group_by_record = dict()
+            for key, value in sorted(second_group.items()):
+                if value in second_group_by_record:
+                    second_group_by_record[value].append(key)
+                else:
+                    second_group_by_record[value] = [key]
+            #print(first_group_by_record)
+            #print(second_group_by_record)
+            new_group = {}
+            while len(first_group_by_record) > 0:
+                most_wins = max(first_group_by_record.keys())
+                first_player = first_group_by_record[most_wins].pop(0)
+                if len(first_group_by_record[most_wins]) == 0:
+                    del first_group_by_record[most_wins]
+                second_player = second_group_by_record[most_wins].pop()
+                if len(second_group_by_record[most_wins]) == 0:
+                    del second_group_by_record[most_wins]
+                current_pairing.append((first_player, second_player))
+                if first_player < second_player:
+                    new_group[first_player] = first_group[first_player] + 1
+                    new_group[second_player] = second_group[second_player]
+                else:
+                    new_group[first_player] = first_group[first_player]
+                    new_group[second_player] = second_group[second_player] + 1
+            new_groups_and_records.append(dict(new_group))
+        groups_and_records = new_groups_and_records
+        pairs.append(tuple(current_pairing))
+        rounds_paired += 1
+    return tuple(pairs)
