@@ -385,43 +385,38 @@ def reinstein_power_matching(num_players, num_rounds):
         new_groups_and_records = []
         current_pairing = []
         while len(groups_and_records) > 0:
-            #print("TEST!")
             first_group = groups_and_records.pop(0)
             second_group = groups_and_records.pop()
-            #print(first_group)
-            #print(second_group)
-            first_group_by_record = dict()
-            for key, value in sorted(first_group.items()):
-                if value in first_group_by_record:
-                    first_group_by_record[value].append(key)
-                else:
-                    first_group_by_record[value] = [key]
-            second_group_by_record = dict()
-            for key, value in sorted(second_group.items()):
-                if value in second_group_by_record:
-                    second_group_by_record[value].append(key)
-                else:
-                    second_group_by_record[value] = [key]
-            #print(first_group_by_record)
-            #print(second_group_by_record)
+            temp_pairs = pair_two_groups(first_group, second_group)
             new_group = {}
-            while len(first_group_by_record) > 0:
-                most_wins = max(first_group_by_record.keys())
-                first_player = first_group_by_record[most_wins].pop(0)
-                if len(first_group_by_record[most_wins]) == 0:
-                    del first_group_by_record[most_wins]
-                second_player = second_group_by_record[most_wins].pop()
-                if len(second_group_by_record[most_wins]) == 0:
-                    del second_group_by_record[most_wins]
-                current_pairing.append((first_player, second_player))
+            for p in temp_pairs:
+                first_player = p[0]
+                second_player = p[1]
                 if first_player < second_player:
-                    new_group[first_player] = first_group[first_player] + 1
+                    new_group[first_player] = first_group[first_player] + 2
                     new_group[second_player] = second_group[second_player]
                 else:
                     new_group[first_player] = first_group[first_player]
-                    new_group[second_player] = second_group[second_player] + 1
+                    new_group[second_player] = second_group[second_player] + 2
+            current_pairing.extend(temp_pairs)
             new_groups_and_records.append(dict(new_group))
         groups_and_records = new_groups_and_records
         pairs.append(tuple(current_pairing))
         rounds_paired += 1
+    # Step 2, if m > 1, pair one more round (if needed)
+    if rounds_paired < num_rounds and odd_factor > 1:
+        new_groups_and_records = []
+        current_pairing = []
+        # first pair the triple of groups
+        pass
+        # then do pairs as before (need to break this out to a separate
+        # function)
+        pass
     return tuple(pairs)
+
+def pair_two_groups(first_group, second_group):
+    pairs = zip([y[0] for y in sorted(first_group.items(),
+        key=lambda x:(x[1], x[0]))], 
+        [y[0] for y in sorted(second_group.items(),
+        key=lambda x:(x[1], -x[0]))])
+    return pairs
