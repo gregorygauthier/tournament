@@ -378,7 +378,8 @@ def reinstein_power_matching(num_players, num_rounds):
         raise NotImpelementedError
     groups_and_records = [{x: 0} for x in range(num_players)]
     rounds_paired = 0
-    while rounds_paired < number_of_factors_of_two:
+    while (rounds_paired < number_of_factors_of_two and
+        rounds_paired < num_rounds):
         #print("Starting pairing for round {0}...".format(rounds_paired + 1))
         #print(groups_and_records)
         new_groups_and_records = []
