@@ -388,18 +388,9 @@ def reinstein_power_matching(num_players, num_rounds):
             first_group = groups_and_records.pop(0)
             second_group = groups_and_records.pop()
             temp_pairs = pair_two_groups(first_group, second_group)
-            new_group = {}
-            for p in temp_pairs:
-                first_player = p[0]
-                second_player = p[1]
-                if first_player < second_player:
-                    new_group[first_player] = first_group[first_player] + 2
-                    new_group[second_player] = second_group[second_player]
-                else:
-                    new_group[first_player] = first_group[first_player]
-                    new_group[second_player] = second_group[second_player] + 2
             current_pairing.extend(temp_pairs)
-            new_groups_and_records.append(dict(new_group))
+            new_groups_and_records.append(updated_records(temp_pairs, 
+                dict(first_group.items() + second_group.items())))
         groups_and_records = new_groups_and_records
         pairs.append(tuple(current_pairing))
         rounds_paired += 1
@@ -420,3 +411,33 @@ def pair_two_groups(first_group, second_group):
         [y[0] for y in sorted(second_group.items(),
         key=lambda x:(x[1], -x[0]))])
     return pairs
+
+def updated_records(pairing, combined_groups):
+    result = dict()
+    for p in pairing:
+        if p[0] < p[1]:
+            winner = p[0]
+            loser = p[1]
+        else:
+            winner = p[1]
+            loser = p[0]
+        if combined_groups[winner] == combined_groups[loser]:
+            result[winner] = combined_groups[winner] + 2
+            result[loser] = combined_groups[loser]
+        elif abs(combined_groups[winner] - combined_groups[loser]) >= 3:
+            raise NoValidPairingError
+        elif abs(combined_groups[winner] - combined_groups[loser]) == 2:
+            if combined_groups[winner] % 2 != 0:
+                raise NoValidPairingError
+            x = (combined_groups[winner] + combined_groups[loser])//2
+            result[winner] = x + 1
+            result[loser] = x
+        else:
+            x = combined_groups[winner] + combined_groups[loser]
+            if x % 4 == 1:
+                x = (x + 1) // 2
+            else:
+                x = (x - 1) // 2
+            result[winner] = x + 2
+            result[loser] = x
+    return result
